@@ -1,0 +1,148 @@
+from machine import Pin
+from machine import Pin, PWM
+from time import sleep
+from leaphymicropython.utils.pins import read_analog
+from leaphymicropython.sensors.linesensor import calibrate_analog_line_sensor
+from leaphymicropython.sensors.sonar import read_distance
+frame = 0
+#pins
+pin = Pin("D14", Pin.OUT)
+
+pwm_a = PWM(Pin("D3")) #rechtermotor
+pwm_a.freq(5000)
+enable_a = Pin("D2", Pin.OUT)
+enable_a.value(1)
+
+pwm_b = PWM(Pin("D11")) #linkermotor
+pwm_b.freq(5000)
+enable_b = Pin("D4", Pin.OUT)
+enable_b.value(0)
+
+right = calibrate_analog_line_sensor(pin=14, #rechtersensor
+                                    below_white=3000,
+                                    above_black=3000,
+                                    test='no') #kalibratie
+
+left = calibrate_analog_line_sensor(pin=15, #linkersensor
+                                    below_white=3000,
+                                    above_black=3000,
+                                    test='no')
+
+def kleur_lezen():
+    kleur2 = calibrate_analog_line_sensor(pin=14, #rechtersensor
+                                 below_white=2500,
+                                 above_black=2500,
+                                 )
+    print('Kleur rechts:')
+    print(kleur2)
+    sleep(0.01)
+
+def kleur_lezen2():
+    kleur = calibrate_analog_line_sensor(pin=15, #linkersensor
+                                          below_white=2500,
+                                          above_black=2500,
+                                          )
+    print('Kleur links:')
+    print(kleur)
+    sleep(0.01)
+
+def kleur_identificatie():
+    kleur_lezen()
+    kleur_lezen2()
+
+def rechtdoor_rijden():
+    enable_a.value(1)
+    enable_b.value(0)
+    pwm_a.duty_u16(50000)
+    pwm_b.duty_u16(50000)
+
+def links_rijden():
+    pwm_a.duty_u16(50000)
+    enable_b.value(1)
+    pwm_a.duty_u16(50000)
+
+def rechts_rijden():
+    enable_a.value(0)
+    pwm_a.duty_u16(50000)
+    pwm_b.duty_u16(50000)
+
+def terug_rijden():
+    enable_a.value(0)
+    enable_b.value(1)
+    pwm_a.duty_u16(50000)
+    pwm_b.duty_u16(50000)
+
+def rijden():
+    right = calibrate_analog_line_sensor(pin=14, #rechtersensor
+                                        below_white=3000,
+                                        above_black=3000,
+                                        test='no') #kalibratie
+    
+    left = calibrate_analog_line_sensor(pin=15, #linkersensor
+                                         below_white=3000,
+                                         above_black=3000,
+                                         test='no')
+    if left == 'white' and right == 'white': #vooruit
+        rechtdoor_rijden()
+    if left == 'white' and right == 'black': #links
+        rechts_rijden()
+    if left == 'black' and right == 'white': #rechts
+        links_rijden()
+    if left == 'black' and right == 'black':
+        kant_kiezen()
+    sleep(0.01)
+
+def kant_kiezen():
+    rechts_rijden()
+    sleep(0.01)
+    if tijderna > 0 and left == 'white' and right == 'white':
+        terug_rijden()
+    
+
+def afstand_lezen():
+    afstand = print(read_distance(19,18))
+    sleep(0.01)
+
+def obstakels():
+    if afstand < 10:
+        pwm_a.duty_u16(0)
+        pwm_b.duty_u16(0)
+
+while True: #B IS LINKS EN A IS RECHTS
+    kleur_identificatie()
+    afstand_lezen()
+    rijden()
+    framecount = frame + 1
+    if framecount / 15% == 0:
+        print(read_distance 19, 18)
+    #obstakels()
+
+
+#def rechtdoor_rijden():
+    #pwm_a.duty_u16(65535)
+    #pwm_b.duty_u16(65535)
+
+#def links_rijden():
+    #pwm_a.duty_u16(65535)
+    #pwm_b.duty_u16(0)
+
+#def rechts_rijden():
+    #pwm_a.duty_u16(0)
+    #pwm_b.duty_u16(65535)
+
+#def rijden():
+    #if left == 'white' and right == 'white':
+        #rechtdoor_rijden()
+        #sleep(0.01)
+    #if left == 'white' and right == 'black':
+        #links_rijden()
+        #sleep(0.01)
+    #if left == 'black' and right == 'white':
+        #rechts_rijden()
+        #sleep(0.01)
+    
+    #frame = 0
+#while True:
+    #frames = frame + 1
+    #if frame / 15% == 0:
+        #print(read_distance 19, 18)
